@@ -155,10 +155,22 @@ else:
     st.warning("🔴 Market is CLOSED")
 
 # ---------------- METRICS ----------------
-base = df[df["Company"] == selected_companies[0]]
-current = float(base["Close"].iloc[-1])
-previous = float(base["Close"].iloc[-2]) if len(base) > 1 else current
+base = df[df["Company"] == selected_companies[0]].copy()
+
+# Ensure numeric values
+base["Close"] = pd.to_numeric(base["Close"], errors="coerce")
+base["High"] = pd.to_numeric(base["High"], errors="coerce")
+base["Low"] = pd.to_numeric(base["Low"], errors="coerce")
+base["Volume"] = pd.to_numeric(base["Volume"], errors="coerce")
+
+current = base["Close"].dropna().iloc[-1]
+previous = base["Close"].dropna().iloc[-2] if len(base["Close"].dropna()) > 1 else current
+
 change = ((current - previous) / previous) * 100 if previous else 0
+high = base["High"].max()
+low = base["Low"].min()
+vol = int(base["Volume"].dropna().iloc[-1])
+
 
 high = base["High"].max()
 low = base["Low"].min()
@@ -208,3 +220,4 @@ st.plotly_chart(fig, use_container_width=True)
 
 # ---------------- FOOTER ----------------
 st.markdown("<div class='footer'>Educational Project | Data from public APIs</div>", unsafe_allow_html=True)
+
