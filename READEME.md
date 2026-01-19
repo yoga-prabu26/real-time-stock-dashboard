@@ -3,19 +3,19 @@
 ## 📌 Project Overview
 
 The **Real-Time Stock Market Dashboard** is a web-based application that tracks, analyzes, and visualizes live stock market data using interactive charts and financial indicators.
-It helps users monitor stock performance across multiple sectors in real time through a simple and user-friendly interface.
+It enables users to monitor stock performance across multiple sectors in real time through a clean and user-friendly interface.
 
-This project is developed as part of an **academic mini project** and demonstrates the practical application of data visualization and API-based systems.
+This project is developed as part of an **academic mini project** and demonstrates the practical application of data visualization, APIs, and web-based dashboards.
 
 ---
 
 ## 🎯 Objectives
 
 * To fetch and display **real-time stock market data**
-* To visualize stock trends using **interactive graphs**
-* To allow **multi-company and sector-wise comparison**
-* To provide key **financial indicators** for analysis
-* To enhance usability with **innovative dashboard features**
+* To visualize stock trends using **interactive charts**
+* To support **sector-wise and multi-company analysis**
+* To display key **financial indicators** for decision support
+* To enhance usability through **innovative dashboard features**
 
 ---
 
@@ -37,7 +37,7 @@ This project is developed as part of an **academic mini project** and demonstrat
 * 📊 Financial indicators:
 
   * Current Price
-  * Percentage Change
+  * Percentage Change (color-coded with arrows)
   * Day High
   * Day Low
   * Volume
@@ -52,55 +52,60 @@ This project is developed as part of an **academic mini project** and demonstrat
 
 ## 💡 Innovation & Creativity
 
-The following innovations were added beyond the basic project requirements:
+The following enhancements were implemented beyond the basic requirements:
 
 ### 1️⃣ Sector-Wise Organization
 
-Stocks are grouped into sectors, allowing users to compare companies within the same industry for better insights.
+Stocks are grouped into sectors, allowing efficient comparison of companies within the same industry.
 
-### 2️⃣ Multi-Company Comparison
+### 2️⃣ Visual Gain/Loss Indicators
 
-Users can select multiple companies and compare their price movements on a single interactive chart.
+Price changes are highlighted using **color-coded arrows**:
+
+* Green ↑ for increase
+* Red ↓ for decrease
+* Gray → for no change
 
 ### 3️⃣ Price Alert System
 
-A simple alert mechanism notifies users when a stock crosses a specified target price.
+Users can set a target price and receive alerts when the stock crosses that value.
 
 ### 4️⃣ CSV Data Export
 
-Users can download stock data in CSV format for reports, analysis, or documentation purposes.
+Stock data can be downloaded in CSV format for offline analysis and reporting.
 
-### 5️⃣ User-Friendly UI
+### 5️⃣ Enhanced User Interface
 
-Dark/Light mode, search functionality, and responsive layout enhance the overall user experience.
+Custom cards, icons, and layout improvements provide a clean and professional dashboard experience.
 
 ---
 
 ## 🧠 System Workflow
 
-1. User selects sector, company, and date range
-2. Application fetches live data using yFinance API
-3. Data is processed using Pandas
-4. Interactive charts and indicators are displayed using Plotly
-5. Alerts and downloads are generated based on user input
+1. User selects sector and company
+2. Application fetches live stock data using yFinance API
+3. Data is processed and cleaned using Pandas
+4. Interactive charts and indicators are rendered using Plotly
+5. Alerts and downloads are generated based on user interaction
 
 ---
 
 ## 📸 Output
 
-* Interactive line charts for stock prices
+* Interactive stock price charts
 * Real-time financial metrics
-* Alert notifications
+* Color-coded gain/loss indicators
+* Price alerts
 * Downloadable CSV files
 
 ---
 
 ## 🚀 Future Enhancements
 
-* Integration of live stock news
-* Advanced technical indicators (RSI, MACD)
+* Integration of live stock-related news
+* Advanced technical indicators (SMA, RSI, MACD)
 * User authentication and personalization
-* Mobile-optimized layout
+* Mobile-optimized interface
 
 ---
 
@@ -110,12 +115,15 @@ Dark/Light mode, search functionality, and responsive layout enhance the overall
 
 ---
 
-## 📎 Project Link
+## 📎 Project Links
 
-🔗 *Live Application:*
-[https://real-time-stock-dashboard-3zfzgf5mek9br3ukquj7tu.streamlit.app/](https://real-time-stock-dashboard-3zfzgf5mek9br3ukquj7tu.streamlit.app/)
+* 🔗 **Live Application:**
+  [https://real-time-stock-dashboard-kebqx7ovcsvkx76hqdbmry.streamlit.app/](https://real-time-stock-dashboard-kebqx7ovcsvkx76hqdbmry.streamlit.app/)
+
+* 💻 **Source Code (GitHub):**
+  [https://github.com/yoga-prabu26/real-time-stock-dashboard](https://github.com/yoga-prabu26/real-time-stock-dashboard)
 
 ---
 
 **Disclaimer:**
-This project is developed for educational purposes only. Stock data is fetched from public APIs and should not be used for real trading decisions.
+This project is developed for educational purposes only. Stock market data is fetched from public APIs and should not be used for real trading or investment decisions.
