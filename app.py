@@ -12,17 +12,24 @@ st.set_page_config(
     layout="wide"
 )
 
-# ---------------- HIDE DEFAULT >> ----------------
+# ---------------- HIDE STREAMLIT >> ARROW (FINAL FIX) ----------------
 st.markdown(
     """
     <style>
-    [data-testid="collapsedControl"] { display: none; }
+    /* Hide ALL sidebar expand / collapse controls */
+    button[title="Collapse sidebar"],
+    button[title="Expand sidebar"],
+    [data-testid="stSidebarCollapsedControl"],
+    [data-testid="collapsedControl"],
+    header [role="button"] {
+        display: none !important;
+    }
     </style>
     """,
     unsafe_allow_html=True
 )
 
-# ---------------- STYLES ----------------
+# ---------------- CUSTOM STYLES ----------------
 st.markdown(
     """
     <style>
@@ -30,14 +37,14 @@ st.markdown(
         font-size:22px;
         font-weight:700;
         color:#38bdf8;
-        margin-bottom:8px;
+        margin-bottom:6px;
     }
     .metric-card {
         background:#020617;
         padding:18px;
         border-radius:14px;
         text-align:center;
-        box-shadow:0 8px 18px rgba(0,0,0,0.3);
+        box-shadow:0 8px 18px rgba(0,0,0,0.35);
     }
     .metric-label {
         font-size:12px;
@@ -48,15 +55,19 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ---------------- HEADER + MENU ----------------
+# ---------------- STATE ----------------
 if "show_sidebar" not in st.session_state:
     st.session_state.show_sidebar = True
 
+# ---------------- TOP BAR ----------------
 h1, h2 = st.columns([9, 1])
 with h1:
-    st.markdown("<div class='top-title'>📊 Real-Time Stock Market Dashboard</div>", unsafe_allow_html=True)
+    st.markdown(
+        "<div class='top-title'>📊 Real-Time Stock Market Dashboard</div>",
+        unsafe_allow_html=True
+    )
 with h2:
-    if st.button("☰"):
+    if st.button("☰", key="menu"):
         st.session_state.show_sidebar = not st.session_state.show_sidebar
 
 st.caption("Sector-wise Analysis • Search • Alerts")
@@ -71,7 +82,7 @@ else:
 
 plot_theme = "plotly_dark" if "Dark" in theme else "plotly"
 
-# ---------------- SECTORS ----------------
+# ---------------- SECTORS & COMPANIES ----------------
 sectors = {
     "IT Sector (India)": {
         "TCS": "TCS.NS",
@@ -96,7 +107,7 @@ sectors = {
     }
 }
 
-# ---------------- INPUT ----------------
+# ---------------- USER INPUT ----------------
 if st.session_state.show_sidebar:
     sector = st.sidebar.selectbox("Select Sector", list(sectors.keys()))
     company = st.sidebar.selectbox("Select Company", list(sectors[sector].keys()))
@@ -119,9 +130,10 @@ data = yf.download(
 )
 
 if data.empty:
-    st.error("No data available.")
+    st.error("No data available for this stock.")
     st.stop()
 
+# Flatten columns
 data.columns = [c[0] if isinstance(c, tuple) else c for c in data.columns]
 data = data.reset_index()
 
@@ -144,22 +156,21 @@ current = float(close[-1])
 previous = float(close[-2]) if len(close) > 1 else current
 change = ((current - previous) / previous) * 100 if previous != 0 else 0
 
-# 🔥 CHANGE COLOR + ICON LOGIC
 if change > 0:
-    change_color = "#16a34a"   # green
+    change_color = "#16a34a"
     change_icon = "🔼"
 elif change < 0:
-    change_color = "#dc2626"   # red
+    change_color = "#dc2626"
     change_icon = "🔽"
 else:
-    change_color = "#9ca3af"   # gray
+    change_color = "#9ca3af"
     change_icon = "➡️"
 
 high = float(highs.max())
 low = float(lows.min())
 vol = int(vols[-1])
 
-m1, m2, m3, m4, m5 = st.columns(5)
+c1, c2, c3, c4, c5 = st.columns(5)
 
 def card(icon, value, label, color="white"):
     st.markdown(
@@ -175,11 +186,11 @@ def card(icon, value, label, color="white"):
         unsafe_allow_html=True
     )
 
-with m1: card("💰", f"{current:.2f}", "Price")
-with m2: card(change_icon, f"{change:.2f}%", "Change %", change_color)
-with m3: card("⬆️", f"{high:.2f}", "High")
-with m4: card("⬇️", f"{low:.2f}", "Low")
-with m5: card("📦", f"{vol:,}", "Volume")
+with c1: card("💰", f"{current:.2f}", "Price")
+with c2: card(change_icon, f"{change:.2f}%", "Change %", change_color)
+with c3: card("⬆️", f"{high:.2f}", "High")
+with c4: card("⬇️", f"{low:.2f}", "Low")
+with c5: card("📦", f"{vol:,}", "Volume")
 
 # ---------------- PRICE ALERT ----------------
 st.markdown("## 🔔 Price Alert")
