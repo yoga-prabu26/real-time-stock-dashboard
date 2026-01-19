@@ -12,7 +12,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# ---------------- HIDE DEFAULT >> ARROW ----------------
+# ---------------- HIDE DEFAULT >> ----------------
 st.markdown(
     """
     <style>
@@ -22,23 +22,15 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ---------------- TOP BAR STYLE ----------------
+# ---------------- STYLES ----------------
 st.markdown(
     """
     <style>
-    .top-bar {
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        padding:14px 22px;
-        background:#020617;
-        border-radius:14px;
-        margin-bottom:18px;
-    }
     .top-title {
         font-size:22px;
         font-weight:700;
         color:#38bdf8;
+        margin-bottom:8px;
     }
     .metric-card {
         background:#020617;
@@ -47,20 +39,23 @@ st.markdown(
         text-align:center;
         box-shadow:0 8px 18px rgba(0,0,0,0.3);
     }
-    .metric-label { font-size:12px; color:#94a3b8; }
+    .metric-label {
+        font-size:12px;
+        color:#94a3b8;
+    }
     </style>
     """,
     unsafe_allow_html=True
 )
 
-# ---------------- SIDEBAR TOGGLE ----------------
+# ---------------- HEADER + MENU ----------------
 if "show_sidebar" not in st.session_state:
     st.session_state.show_sidebar = True
 
-bar1, bar2 = st.columns([9, 1])
-with bar1:
+h1, h2 = st.columns([9, 1])
+with h1:
     st.markdown("<div class='top-title'>📊 Real-Time Stock Market Dashboard</div>", unsafe_allow_html=True)
-with bar2:
+with h2:
     if st.button("☰"):
         st.session_state.show_sidebar = not st.session_state.show_sidebar
 
@@ -76,7 +71,7 @@ else:
 
 plot_theme = "plotly_dark" if "Dark" in theme else "plotly"
 
-# ---------------- SECTORS (MORE COMPANIES) ----------------
+# ---------------- SECTORS ----------------
 sectors = {
     "IT Sector (India)": {
         "TCS": "TCS.NS",
@@ -101,7 +96,7 @@ sectors = {
     }
 }
 
-# ---------------- USER INPUT ----------------
+# ---------------- INPUT ----------------
 if st.session_state.show_sidebar:
     sector = st.sidebar.selectbox("Select Sector", list(sectors.keys()))
     company = st.sidebar.selectbox("Select Company", list(sectors[sector].keys()))
@@ -115,7 +110,7 @@ ticker = sectors[sector][company]
 end_date = date.today()
 start_date = end_date - timedelta(days=7)
 
-# ---------------- FETCH DATA (SAFE) ----------------
+# ---------------- FETCH DATA ----------------
 data = yf.download(
     ticker,
     start=start_date,
@@ -127,7 +122,6 @@ if data.empty:
     st.error("No data available.")
     st.stop()
 
-# Flatten columns (important)
 data.columns = [c[0] if isinstance(c, tuple) else c for c in data.columns]
 data = data.reset_index()
 
@@ -140,7 +134,7 @@ if time(9, 15) <= now <= time(15, 30):
 else:
     st.warning("🔴 Market is CLOSED")
 
-# ---------------- METRICS (SAFE) ----------------
+# ---------------- METRICS ----------------
 close = data["Close"].values
 highs = data["High"].values
 lows = data["Low"].values
@@ -150,18 +144,31 @@ current = float(close[-1])
 previous = float(close[-2]) if len(close) > 1 else current
 change = ((current - previous) / previous) * 100 if previous != 0 else 0
 
+# 🔥 CHANGE COLOR + ICON LOGIC
+if change > 0:
+    change_color = "#16a34a"   # green
+    change_icon = "🔼"
+elif change < 0:
+    change_color = "#dc2626"   # red
+    change_icon = "🔽"
+else:
+    change_color = "#9ca3af"   # gray
+    change_icon = "➡️"
+
 high = float(highs.max())
 low = float(lows.min())
 vol = int(vols[-1])
 
 m1, m2, m3, m4, m5 = st.columns(5)
 
-def card(icon, value, label):
+def card(icon, value, label, color="white"):
     st.markdown(
         f"""
         <div class="metric-card">
             <div style="font-size:22px">{icon}</div>
-            <div style="font-size:20px;font-weight:700">{value}</div>
+            <div style="font-size:20px;font-weight:700;color:{color}">
+                {value}
+            </div>
             <div class="metric-label">{label}</div>
         </div>
         """,
@@ -169,7 +176,7 @@ def card(icon, value, label):
     )
 
 with m1: card("💰", f"{current:.2f}", "Price")
-with m2: card("📊", f"{change:.2f}%", "Change %")
+with m2: card(change_icon, f"{change:.2f}%", "Change %", change_color)
 with m3: card("⬆️", f"{high:.2f}", "High")
 with m4: card("⬇️", f"{low:.2f}", "Low")
 with m5: card("📦", f"{vol:,}", "Volume")
