@@ -8,23 +8,73 @@ import pytz
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(
     page_title="Real-Time Stock Market Dashboard",
-    page_icon="📊",
+    page_icon="📈",
     layout="wide"
 )
 
-# ---------------- SIDEBAR ----------------
-st.sidebar.header("⚙️ Settings")
-theme = st.sidebar.radio("Theme", ["Dark Mode 🌙", "Light Mode ☀️"])
-refresh = st.sidebar.selectbox("Auto Refresh", ["Manual", "30 sec", "60 sec"])
+# ---------------- HIDE DEFAULT >> ARROW ----------------
+st.markdown(
+    """
+    <style>
+    [data-testid="collapsedControl"] { display: none; }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
-if refresh != "Manual":
-    st.autorefresh(interval=int(refresh.split()[0]) * 1000, key="refresh")
+# ---------------- TOP BAR STYLE ----------------
+st.markdown(
+    """
+    <style>
+    .top-bar {
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        padding:14px 22px;
+        background:#020617;
+        border-radius:14px;
+        margin-bottom:18px;
+    }
+    .top-title {
+        font-size:22px;
+        font-weight:700;
+        color:#38bdf8;
+    }
+    .metric-card {
+        background:#020617;
+        padding:18px;
+        border-radius:14px;
+        text-align:center;
+        box-shadow:0 8px 18px rgba(0,0,0,0.3);
+    }
+    .metric-label { font-size:12px; color:#94a3b8; }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# ---------------- SIDEBAR TOGGLE ----------------
+if "show_sidebar" not in st.session_state:
+    st.session_state.show_sidebar = True
+
+bar1, bar2 = st.columns([9, 1])
+with bar1:
+    st.markdown("<div class='top-title'>📊 Real-Time Stock Market Dashboard</div>", unsafe_allow_html=True)
+with bar2:
+    if st.button("☰"):
+        st.session_state.show_sidebar = not st.session_state.show_sidebar
+
+st.caption("Sector-wise Analysis • Search • Alerts")
+st.markdown("---")
+
+# ---------------- SIDEBAR ----------------
+if st.session_state.show_sidebar:
+    st.sidebar.header("⚙️ Settings")
+    theme = st.sidebar.radio("Theme", ["Dark Mode 🌙", "Light Mode ☀️"])
+else:
+    theme = "Dark Mode 🌙"
 
 plot_theme = "plotly_dark" if "Dark" in theme else "plotly"
-
-# ---------------- HEADER ----------------
-st.title("📊 Real-Time Stock Market Dashboard")
-st.caption("Sector-wise Analysis • Search • Alerts")
 
 # ---------------- SECTORS (MORE COMPANIES) ----------------
 sectors = {
@@ -33,7 +83,6 @@ sectors = {
         "Infosys": "INFY.NS",
         "Wipro": "WIPRO.NS",
         "HCL Tech": "HCLTECH.NS",
-        "LTIMindtree": "LTIM.NS",
         "Tech Mahindra": "TECHM.NS"
     },
     "Banking Sector (India)": {
@@ -48,25 +97,25 @@ sectors = {
         "Microsoft": "MSFT",
         "Amazon": "AMZN",
         "Google": "GOOGL",
-        "Tesla": "TSLA",
-        "Meta": "META"
+        "Tesla": "TSLA"
     }
 }
 
 # ---------------- USER INPUT ----------------
-selected_sector = st.sidebar.selectbox("Select Sector", list(sectors.keys()))
-companies = sectors[selected_sector]
+if st.session_state.show_sidebar:
+    sector = st.sidebar.selectbox("Select Sector", list(sectors.keys()))
+    company = st.sidebar.selectbox("Select Company", list(sectors[sector].keys()))
+else:
+    sector = list(sectors.keys())[0]
+    company = list(sectors[sector].keys())[0]
 
-selected_company = st.sidebar.selectbox(
-    "Select Company", list(companies.keys())
-)
+ticker = sectors[sector][company]
 
+# ---------------- DATE RANGE ----------------
 end_date = date.today()
 start_date = end_date - timedelta(days=7)
 
-# ---------------- FETCH DATA (SAFE WAY) ----------------
-ticker = companies[selected_company]
-
+# ---------------- FETCH DATA (SAFE) ----------------
 data = yf.download(
     ticker,
     start=start_date,
@@ -75,10 +124,10 @@ data = yf.download(
 )
 
 if data.empty:
-    st.error("No data available for this stock.")
+    st.error("No data available.")
     st.stop()
 
-# 🔒 FLATTEN COLUMNS (IMPORTANT)
+# Flatten columns (important)
 data.columns = [c[0] if isinstance(c, tuple) else c for c in data.columns]
 data = data.reset_index()
 
@@ -91,54 +140,63 @@ if time(9, 15) <= now <= time(15, 30):
 else:
     st.warning("🔴 Market is CLOSED")
 
-# ---------------- METRICS (100% SAFE) ----------------
-close_prices = data["Close"].values
-high_prices = data["High"].values
-low_prices = data["Low"].values
-volumes = data["Volume"].values
+# ---------------- METRICS (SAFE) ----------------
+close = data["Close"].values
+highs = data["High"].values
+lows = data["Low"].values
+vols = data["Volume"].values
 
-current = float(close_prices[-1])
-previous = float(close_prices[-2]) if len(close_prices) > 1 else current
+current = float(close[-1])
+previous = float(close[-2]) if len(close) > 1 else current
 change = ((current - previous) / previous) * 100 if previous != 0 else 0
 
-high = float(high_prices.max())
-low = float(low_prices.min())
-vol = int(volumes[-1])
+high = float(highs.max())
+low = float(lows.min())
+vol = int(vols[-1])
 
-color = "green" if change >= 0 else "red"
+m1, m2, m3, m4, m5 = st.columns(5)
 
-c1, c2, c3, c4, c5 = st.columns(5)
+def card(icon, value, label):
+    st.markdown(
+        f"""
+        <div class="metric-card">
+            <div style="font-size:22px">{icon}</div>
+            <div style="font-size:20px;font-weight:700">{value}</div>
+            <div class="metric-label">{label}</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-c1.metric("💰 Price", f"{current:.2f}")
-c2.metric("📊 Change %", f"{change:.2f}%")
-c3.metric("⬆️ High", f"{high:.2f}")
-c4.metric("⬇️ Low", f"{low:.2f}")
-c5.metric("📦 Volume", f"{vol:,}")
+with m1: card("💰", f"{current:.2f}", "Price")
+with m2: card("📊", f"{change:.2f}%", "Change %")
+with m3: card("⬆️", f"{high:.2f}", "High")
+with m4: card("⬇️", f"{low:.2f}", "Low")
+with m5: card("📦", f"{vol:,}", "Volume")
 
 # ---------------- PRICE ALERT ----------------
-st.subheader("🔔 Price Alert")
+st.markdown("## 🔔 Price Alert")
 alert = st.number_input("Alert when price crosses:", min_value=0.0)
 
 if alert > 0:
     if current >= alert:
-        st.success(f"🚨 ALERT: {selected_company} crossed {alert}")
+        st.success(f"🚨 ALERT: {company} crossed {alert}")
     else:
         st.info("Alert not triggered yet")
 
 # ---------------- CHART ----------------
-st.subheader("📈 Stock Price Trend")
-
+st.markdown("## 📈 Stock Price Trend")
 fig = px.line(
     data,
     x="Date",
     y="Close",
-    title=f"{selected_company} Price Movement",
+    title=f"{company} Stock Price",
     template=plot_theme
 )
 st.plotly_chart(fig, use_container_width=True)
 
 # ---------------- DOWNLOAD ----------------
-st.subheader("⬇️ Download Data")
+st.markdown("## ⬇️ Download Data")
 st.download_button(
     "Download CSV",
     data.to_csv(index=False),
@@ -147,7 +205,9 @@ st.download_button(
 )
 
 # ---------------- FOOTER ----------------
-st.caption(
-    "Educational Project | Data from Yahoo Finance | "
-    "GitHub: https://github.com/yoga-prabu26/real-time-stock-dashboard"
+st.markdown(
+    "<hr style='border:0.5px solid #334155'>"
+    "<center style='color:#94a3b8'>Educational Project • "
+    "GitHub: https://github.com/yoga-prabu26/real-time-stock-dashboard</center>",
+    unsafe_allow_html=True
 )
