@@ -41,7 +41,6 @@ else:
 st.markdown(f"""
 <style>
 .main {{ background-color: {bg}; }}
-
 .metric-card {{
     background: linear-gradient(145deg, {card}, #020617);
     padding: 22px;
@@ -49,7 +48,6 @@ st.markdown(f"""
     text-align: center;
     box-shadow: 0 10px 25px rgba(0,0,0,0.25);
 }}
-
 .metric-icon {{ font-size: 28px; }}
 .metric-value {{ font-size: 30px; font-weight: 700; color: {text}; }}
 .metric-label {{
@@ -143,6 +141,10 @@ for company in selected_companies:
     data["Time"] = data.index
     all_data.append(data)
 
+if not all_data:
+    st.error("No data available for selected options.")
+    st.stop()
+
 df = pd.concat(all_data)
 
 # ---------------- MARKET STATUS ----------------
@@ -157,7 +159,6 @@ else:
 # ---------------- METRICS ----------------
 base = df[df["Company"] == selected_companies[0]].copy()
 
-# Ensure numeric values
 base["Close"] = pd.to_numeric(base["Close"], errors="coerce")
 base["High"] = pd.to_numeric(base["High"], errors="coerce")
 base["Low"] = pd.to_numeric(base["Low"], errors="coerce")
@@ -171,10 +172,6 @@ high = base["High"].max()
 low = base["Low"].min()
 vol = int(base["Volume"].dropna().iloc[-1])
 
-
-high = base["High"].max()
-low = base["Low"].min()
-vol = int(base["Volume"].iloc[-1])
 color = "#16a34a" if change >= 0 else "#dc2626"
 
 c1, c2, c3, c4, c5 = st.columns(5)
@@ -219,5 +216,8 @@ fig = px.line(df, x="Time", y="Close", color="Company", template=plot_theme)
 st.plotly_chart(fig, use_container_width=True)
 
 # ---------------- FOOTER ----------------
-st.markdown("<div class='footer'>Educational Project | Data from public APIs</div>", unsafe_allow_html=True)
-
+st.markdown(
+    "<div class='footer'>Educational Project | Data from public APIs<br>"
+    "🔗 GitHub: https://github.com/yoga-prabu26/real-time-stock-dashboard</div>",
+    unsafe_allow_html=True
+)
