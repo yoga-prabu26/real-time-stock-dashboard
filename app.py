@@ -12,66 +12,9 @@ st.set_page_config(
     layout="wide"
 )
 
-# ---------------- HIDE STREAMLIT >> ARROW (FINAL FIX) ----------------
-st.markdown(
-    """
-    <style>
-    /* Hide ALL sidebar expand / collapse controls */
-    button[title="Collapse sidebar"],
-    button[title="Expand sidebar"],
-    [data-testid="stSidebarCollapsedControl"],
-    [data-testid="collapsedControl"],
-    header [role="button"] {
-        display: none !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-# ---------------- CUSTOM STYLES ----------------
-st.markdown(
-    """
-    <style>
-    .top-title {
-        font-size:22px;
-        font-weight:700;
-        color:#38bdf8;
-        margin-bottom:6px;
-    }
-    .metric-card {
-        background:#020617;
-        padding:18px;
-        border-radius:14px;
-        text-align:center;
-        box-shadow:0 8px 18px rgba(0,0,0,0.35);
-    }
-    .metric-label {
-        font-size:12px;
-        color:#94a3b8;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
 # ---------------- STATE ----------------
 if "show_sidebar" not in st.session_state:
     st.session_state.show_sidebar = True
-
-# ---------------- TOP BAR ----------------
-h1, h2 = st.columns([9, 1])
-with h1:
-    st.markdown(
-        "<div class='top-title'>📊 Real-Time Stock Market Dashboard</div>",
-        unsafe_allow_html=True
-    )
-with h2:
-    if st.button("☰", key="menu"):
-        st.session_state.show_sidebar = not st.session_state.show_sidebar
-
-st.caption("Sector-wise Analysis • Search • Alerts")
-st.markdown("---")
 
 # ---------------- SIDEBAR ----------------
 if st.session_state.show_sidebar:
@@ -80,23 +23,75 @@ if st.session_state.show_sidebar:
 else:
     theme = "Dark Mode 🌙"
 
-plot_theme = "plotly_dark" if "Dark" in theme else "plotly"
+# ---------------- THEME VARIABLES ----------------
+if theme == "Dark Mode 🌙":
+    bg_color = "#020617"
+    card_color = "#020617"
+    text_color = "#ffffff"
+    sub_text = "#94a3b8"
+    accent = "#38bdf8"
+    plot_theme = "plotly_dark"
+else:
+    bg_color = "#f8fafc"
+    card_color = "#ffffff"
+    text_color = "#020617"
+    sub_text = "#475569"
+    accent = "#2563eb"
+    plot_theme = "plotly"
 
-# ---------------- SECTORS & COMPANIES ----------------
+# ---------------- GLOBAL CSS ----------------
+st.markdown(
+    f"""
+    <style>
+    .stApp {{
+        background-color: {bg_color};
+        color: {text_color};
+    }}
+    .top-title {{
+        font-size:22px;
+        font-weight:700;
+        color:{accent};
+        margin-bottom:6px;
+    }}
+    .metric-card {{
+        background:{card_color};
+        padding:18px;
+        border-radius:14px;
+        text-align:center;
+        box-shadow:0 8px 18px rgba(0,0,0,0.25);
+    }}
+    .metric-label {{
+        font-size:12px;
+        color:{sub_text};
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# ---------------- HEADER ----------------
+h1, h2 = st.columns([9, 1])
+with h1:
+    st.markdown("<div class='top-title'>📊 Real-Time Stock Market Dashboard</div>", unsafe_allow_html=True)
+with h2:
+    if st.button("☰"):
+        st.session_state.show_sidebar = not st.session_state.show_sidebar
+
+st.caption("Sector-wise Analysis • Search • Alerts")
+st.markdown("---")
+
+# ---------------- SECTORS ----------------
 sectors = {
     "IT Sector (India)": {
         "TCS": "TCS.NS",
         "Infosys": "INFY.NS",
         "Wipro": "WIPRO.NS",
-        "HCL Tech": "HCLTECH.NS",
-        "Tech Mahindra": "TECHM.NS"
+        "HCL Tech": "HCLTECH.NS"
     },
     "Banking Sector (India)": {
         "HDFC Bank": "HDFCBANK.NS",
         "ICICI Bank": "ICICIBANK.NS",
-        "SBI": "SBIN.NS",
-        "Axis Bank": "AXISBANK.NS",
-        "Kotak Bank": "KOTAKBANK.NS"
+        "SBI": "SBIN.NS"
     },
     "US Tech": {
         "Apple": "AAPL",
@@ -107,7 +102,7 @@ sectors = {
     }
 }
 
-# ---------------- USER INPUT ----------------
+# ---------------- INPUT ----------------
 if st.session_state.show_sidebar:
     sector = st.sidebar.selectbox("Select Sector", list(sectors.keys()))
     company = st.sidebar.selectbox("Select Company", list(sectors[sector].keys()))
@@ -130,10 +125,9 @@ data = yf.download(
 )
 
 if data.empty:
-    st.error("No data available for this stock.")
+    st.error("No data available.")
     st.stop()
 
-# Flatten columns
 data.columns = [c[0] if isinstance(c, tuple) else c for c in data.columns]
 data = data.reset_index()
 
@@ -172,7 +166,7 @@ vol = int(vols[-1])
 
 c1, c2, c3, c4, c5 = st.columns(5)
 
-def card(icon, value, label, color="white"):
+def card(icon, value, label, color=text_color):
     st.markdown(
         f"""
         <div class="metric-card">
@@ -225,7 +219,7 @@ st.download_button(
 # ---------------- FOOTER ----------------
 st.markdown(
     "<hr style='border:0.5px solid #334155'>"
-    "<center style='color:#94a3b8'>Educational Project • "
+    f"<center style='color:{sub_text}'>Educational Project • "
     "GitHub: https://github.com/yoga-prabu26/real-time-stock-dashboard</center>",
     unsafe_allow_html=True
 )
