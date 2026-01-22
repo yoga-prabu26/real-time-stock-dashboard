@@ -2,7 +2,7 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 import plotly.express as px
-from datetime import datetime, time, date, timedelta
+from datetime import datetime, time
 import pytz
 
 # ---------------- PAGE CONFIG ----------------
@@ -12,130 +12,113 @@ st.set_page_config(
     layout="wide"
 )
 
-# ---------------- HIDE STREAMLIT >> ARROW (FINAL FIX) ----------------
-st.markdown(
-    """
-    <style>
-    /* Hide ALL sidebar expand / collapse controls */
-    button[title="Collapse sidebar"],
-    button[title="Expand sidebar"],
-    [data-testid="stSidebarCollapsedControl"],
-    [data-testid="collapsedControl"],
-    header [role="button"] {
-        display: none !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+# ---------------- SIDEBAR ----------------
+st.sidebar.header("⚙️ Settings")
+theme = st.sidebar.radio("Theme", ["Dark Mode 🌙", "Light Mode ☀️"])
 
-# ---------------- CUSTOM STYLES ----------------
+# ---------------- THEME VARIABLES ----------------
+if theme.startswith("Dark"):
+    plot_theme = "plotly_dark"
+    bg_card = "#020617"
+    text_main = "#ffffff"
+    text_sub = "#94a3b8"
+    title_color = "#38bdf8"
+    shadow = "rgba(0,0,0,0.4)"
+else:
+    plot_theme = "plotly"
+    bg_card = "#f8fafc"
+    text_main = "#020617"
+    text_sub = "#475569"
+    title_color = "#0f172a"
+    shadow = "rgba(0,0,0,0.1)"
+
+# ---------------- STYLES ----------------
 st.markdown(
-    """
+    f"""
     <style>
-    .top-title {
-        font-size:22px;
+    .title {{
+        font-size:24px;
         font-weight:700;
-        color:#38bdf8;
-        margin-bottom:6px;
-    }
-    .metric-card {
-        background:#020617;
+        color:{title_color};
+    }}
+    .subtitle {{
+        color:{text_sub};
+        margin-bottom:12px;
+    }}
+    .card {{
+        background:{bg_card};
         padding:18px;
         border-radius:14px;
         text-align:center;
-        box-shadow:0 8px 18px rgba(0,0,0,0.35);
-    }
-    .metric-label {
+        box-shadow:0 6px 16px {shadow};
+    }}
+    .label {{
         font-size:12px;
-        color:#94a3b8;
-    }
+        color:{text_sub};
+    }}
     </style>
     """,
     unsafe_allow_html=True
 )
 
-# ---------------- STATE ----------------
-if "show_sidebar" not in st.session_state:
-    st.session_state.show_sidebar = True
-
-# ---------------- TOP BAR ----------------
-h1, h2 = st.columns([9, 1])
-with h1:
-    st.markdown(
-        "<div class='top-title'>📊 Real-Time Stock Market Dashboard</div>",
-        unsafe_allow_html=True
-    )
-with h2:
-    if st.button("☰", key="menu"):
-        st.session_state.show_sidebar = not st.session_state.show_sidebar
-
-st.caption("Sector-wise Analysis • Search • Alerts")
+# ---------------- TITLE ----------------
+st.markdown("<div class='title'>📊 Real-Time Stock Market Dashboard</div>", unsafe_allow_html=True)
+st.markdown("<div class='subtitle'>Sector-wise Analysis • Controlled Fetch • Alerts</div>", unsafe_allow_html=True)
 st.markdown("---")
 
-# ---------------- SIDEBAR ----------------
-if st.session_state.show_sidebar:
-    st.sidebar.header("⚙️ Settings")
-    theme = st.sidebar.radio("Theme", ["Dark Mode 🌙", "Light Mode ☀️"])
-else:
-    theme = "Dark Mode 🌙"
-
-plot_theme = "plotly_dark" if "Dark" in theme else "plotly"
-
-# ---------------- SECTORS & COMPANIES ----------------
+# ---------------- SECTORS ----------------
 sectors = {
-    "IT Sector (India)": {
-        "TCS": "TCS.NS",
-        "Infosys": "INFY.NS",
-        "Wipro": "WIPRO.NS",
-        "HCL Tech": "HCLTECH.NS",
-        "Tech Mahindra": "TECHM.NS"
-    },
-    "Banking Sector (India)": {
+    "Indian Banking": {
         "HDFC Bank": "HDFCBANK.NS",
         "ICICI Bank": "ICICIBANK.NS",
-        "SBI": "SBIN.NS",
-        "Axis Bank": "AXISBANK.NS",
-        "Kotak Bank": "KOTAKBANK.NS"
+        "SBI": "SBIN.NS"
+    },
+    "Indian IT": {
+        "TCS": "TCS.NS",
+        "Infosys": "INFY.NS",
+        "Wipro": "WIPRO.NS"
     },
     "US Tech": {
         "Apple": "AAPL",
         "Microsoft": "MSFT",
         "Amazon": "AMZN",
-        "Google": "GOOGL",
-        "Tesla": "TSLA"
+        "Nvidia": "NVDA"
     }
 }
 
-# ---------------- USER INPUT ----------------
-if st.session_state.show_sidebar:
-    sector = st.sidebar.selectbox("Select Sector", list(sectors.keys()))
-    company = st.sidebar.selectbox("Select Company", list(sectors[sector].keys()))
-else:
-    sector = list(sectors.keys())[0]
-    company = list(sectors[sector].keys())[0]
-
+sector = st.sidebar.selectbox("Select Sector", list(sectors.keys()))
+company = st.sidebar.selectbox("Select Company", list(sectors[sector].keys()))
 ticker = sectors[sector][company]
 
-# ---------------- DATE RANGE ----------------
-end_date = date.today()
-start_date = end_date - timedelta(days=7)
+# ---------------- FETCH BUTTON (IMPORTANT) ----------------
+fetch = st.sidebar.button("📥 Fetch Stock Data")
 
-# ---------------- FETCH DATA ----------------
-data = yf.download(
-    ticker,
-    start=start_date,
-    end=end_date + timedelta(days=1),
-    progress=False
-)
+# ---------------- CACHE FUNCTION ----------------
+@st.cache_data(ttl=600)
+def fetch_data(symbol):
+    df = yf.download(
+        symbol,
+        period="1mo",
+        interval="1d",
+        auto_adjust=True,
+        progress=False
+    )
+    if df.empty:
+        return None
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = df.columns.get_level_values(0)
+    return df.reset_index()
 
-if data.empty:
-    st.error("No data available for this stock.")
+# ---------------- FETCH LOGIC ----------------
+if not fetch:
+    st.info("👈 Select a stock and click **Fetch Stock Data**")
     st.stop()
 
-# Flatten columns
-data.columns = [c[0] if isinstance(c, tuple) else c for c in data.columns]
-data = data.reset_index()
+data = fetch_data(ticker)
+
+if data is None:
+    st.warning("⚠️ Yahoo Finance rate-limited the request. Please wait 1–2 minutes and try again.")
+    st.stop()
 
 # ---------------- MARKET STATUS ----------------
 india = pytz.timezone("Asia/Kolkata")
@@ -147,76 +130,43 @@ else:
     st.warning("🔴 Market is CLOSED")
 
 # ---------------- METRICS ----------------
-close = data["Close"].values
-highs = data["High"].values
-lows = data["Low"].values
-vols = data["Volume"].values
+close = data["Close"]
+high = data["High"].max()
+low = data["Low"].min()
+volume = int(data["Volume"].iloc[-1])
 
-current = float(close[-1])
-previous = float(close[-2]) if len(close) > 1 else current
+current = float(close.iloc[-1])
+previous = float(close.iloc[-2]) if len(close) > 1 else current
 change = ((current - previous) / previous) * 100 if previous != 0 else 0
 
-if change > 0:
-    change_color = "#16a34a"
-    change_icon = "🔼"
-elif change < 0:
-    change_color = "#dc2626"
-    change_icon = "🔽"
-else:
-    change_color = "#9ca3af"
-    change_icon = "➡️"
-
-high = float(highs.max())
-low = float(lows.min())
-vol = int(vols[-1])
-
-c1, c2, c3, c4, c5 = st.columns(5)
-
-def card(icon, value, label, color="white"):
+def card(icon, value, label, color=text_main):
     st.markdown(
         f"""
-        <div class="metric-card">
+        <div class="card">
             <div style="font-size:22px">{icon}</div>
-            <div style="font-size:20px;font-weight:700;color:{color}">
-                {value}
-            </div>
-            <div class="metric-label">{label}</div>
+            <div style="font-size:20px;font-weight:700;color:{color}">{value}</div>
+            <div class="label">{label}</div>
         </div>
         """,
         unsafe_allow_html=True
     )
 
+c1, c2, c3, c4, c5 = st.columns(5)
 with c1: card("💰", f"{current:.2f}", "Price")
-with c2: card(change_icon, f"{change:.2f}%", "Change %", change_color)
+with c2: card("📊", f"{change:.2f}%", "Change",
+              "#16a34a" if change >= 0 else "#dc2626")
 with c3: card("⬆️", f"{high:.2f}", "High")
 with c4: card("⬇️", f"{low:.2f}", "Low")
-with c5: card("📦", f"{vol:,}", "Volume")
-
-# ---------------- PRICE ALERT ----------------
-st.markdown("## 🔔 Price Alert")
-alert = st.number_input("Alert when price crosses:", min_value=0.0)
-
-if alert > 0:
-    if current >= alert:
-        st.success(f"🚨 ALERT: {company} crossed {alert}")
-    else:
-        st.info("Alert not triggered yet")
+with c5: card("📦", f"{volume:,}", "Volume")
 
 # ---------------- CHART ----------------
-st.markdown("## 📈 Stock Price Trend")
-fig = px.line(
-    data,
-    x="Date",
-    y="Close",
-    title=f"{company} Stock Price",
-    template=plot_theme
-)
+st.markdown("## 📈 Price Trend")
+fig = px.line(data, x="Date", y="Close", template=plot_theme)
 st.plotly_chart(fig, use_container_width=True)
 
 # ---------------- DOWNLOAD ----------------
-st.markdown("## ⬇️ Download Data")
 st.download_button(
-    "Download CSV",
+    "⬇️ Download CSV",
     data.to_csv(index=False),
     "stock_data.csv",
     "text/csv"
@@ -224,8 +174,6 @@ st.download_button(
 
 # ---------------- FOOTER ----------------
 st.markdown(
-    "<hr style='border:0.5px solid #334155'>"
-    "<center style='color:#94a3b8'>Educational Project • "
-    "GitHub: https://github.com/yoga-prabu26/real-time-stock-dashboard</center>",
+    "<hr><center style='color:gray'>Educational Project • Stable Version</center>",
     unsafe_allow_html=True
 )
