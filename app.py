@@ -174,6 +174,14 @@ st.download_button(
 
 # ---------------- FOOTER ----------------
 st.markdown(
-    "<hr><center style='color:gray'>Educational Project • Stable Version</center>",
+    """
+    <hr>
+    <center style="color:gray; font-size:14px">
+        Real-Time Stock Market Dashboard<br>
+        Developed by <b>Yoga Prabu E</b>
+    </center>
+    """,
     unsafe_allow_html=True
 )
+
+
