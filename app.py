@@ -174,14 +174,55 @@ st.download_button(
 
 # ---------------- FOOTER ----------------
 st.markdown(
-    """
-    <hr>
-    <center style="color:gray; font-size:14px">
-        Real-Time Stock Market Dashboard<br>
-        Developed by <b>Yoga Prabu E</b>
-    </center>
+    f"""
+    <style>
+    .footer {{
+        margin-top:40px;
+        padding:20px;
+        border-radius:12px;
+        background:{bg_card};
+        box-shadow:0 4px 12px {shadow};
+        text-align:center;
+    }}
+    .footer-title {{
+        font-size:16px;
+        font-weight:600;
+        color:{title_color};
+    }}
+    .footer-text {{
+        font-size:13px;
+        color:{text_sub};
+        margin-top:6px;
+    }}
+    .footer-links a {{
+        margin:0 10px;
+        text-decoration:none;
+        color:{title_color};
+        font-size:14px;
+    }}
+    .footer-links a:hover {{
+        text-decoration:underline;
+    }}
+    </style>
+
+    <div class="footer">
+        <div class="footer-title">📊 Real-Time Stock Market Dashboard</div>
+        
+        <div class="footer-text">
+            Built with ❤️ using Streamlit • Data from Yahoo Finance
+        </div>
+
+        <div class="footer-links">
+            <a href="#">About</a>
+            <a href="#">GitHub</a>
+            <a href="#">Contact</a>
+        </div>
+
+        <div class="footer-text" style="margin-top:10px;">
+            © 2026 Yoga Prabu E
+        </div>
+    </div>
     """,
     unsafe_allow_html=True
 )
-
 
